@@ -408,7 +408,7 @@ export class AppComponent {
 
     const svg = radialGraph
       .append('svg')
-      .attr('viewBox', '-1051 -420 2100 2500')
+      .attr('viewBox', '-451 -420 2100 2500')
       .attr('stroke-linejoin', 'round')
       .attr('stroke-linecap', 'round');
 
