@@ -149,11 +149,11 @@ export class AppComponent {
       this.xDateMin = new Date(this.pressureDates[0]);
       this.xDateMax = new Date(this.pressureDates[0])
    
-      this.xDateMin.setMinutes(this.xDateMin.getMinutes() - 15);
-      this.xDateMax.setMinutes(this.xDateMax.getMinutes() + 15);
+      this.xDateMin.setMinutes(this.xDateMin.getMinutes() );
+      this.xDateMax.setMinutes(this.xDateMax.getMinutes() + 30);
 
       // this.xDateMin.setHours(this.xDateMin.getHours() + 5);
-      this.xDateMax.setHours(this.xDateMax.getHours() + 1);
+      // this.xDateMax.setHours(this.xDateMax.getHours() + 1);
 
   }
 
@@ -183,12 +183,12 @@ export class AppComponent {
     let xAxis = g =>
       g
         .attr('font-family', 'sans-serif')
-        .attr('font-size', 10)
+        .attr('font-size', 7)
         .attr('fill', 'white')
         .call(g =>
           g
             .selectAll('g')
-            .data(x.ticks(30))
+            .data(x.ticks(15))
             .enter()
             .append('g')
             .each((d, i) => (d.id = d.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })))
@@ -280,7 +280,7 @@ export class AppComponent {
       g
         .attr('text-anchor', 'middle')
         .attr('font-family', 'sans-serif')
-        .attr('font-size', 13)
+        .attr('font-size', 16)
         .attr('color', 'black')
         .call(g =>
           g
@@ -392,7 +392,7 @@ export class AppComponent {
         .attr('stroke', 'lightsteelblue')
         .attr('stroke-opacity', 0.88)
         .attr('stroke-width', 3)
-        .attr('d', line.radius(d => y(d.Pressure))(this.plist500[i]));
+        .attr('d', line.radius(d => y(d.Pressure))(this.plist500[0]));
     }
 
     // for (let i = 0; i < this.plist5000.length; i++) {
