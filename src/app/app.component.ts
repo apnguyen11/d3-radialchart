@@ -1,12 +1,12 @@
 import { Component, OnInit, Output, Input, AfterViewInit, ViewChild, ElementRef, EventEmitter } from '@angular/core';
 import * as d3 from 'd3';
 import { data } from './radialData'
+import * as realData from './PT_Data_Dec_12_Pontus_New_Format.json'
 
 interface ChartData {
-  date: Date;
-  pressure: Number;
-  pMin: Number;
-  pMax: Number;
+  TimeStamp: String;
+  Pressure: Number;
+
 }
 
 @Component({
@@ -15,26 +15,165 @@ interface ChartData {
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  radialData = JSON.parse(JSON.stringify(data))
+  radialData = realData
+
+
+  @Input() showValid = false;
+  // public rigOptions: Rig[];
+  public arr: number[] = [];
+  public arr2: number[] = [];
+  @Output() change: EventEmitter<void> = new EventEmitter();
+  public rigOptions: String[] = [
+    'Pontus',
+    'Poseidon',
+    'Proteus',
+    'Thalassa',
+    'DS-10',
+    'Olympus',
+    'BravaStar',
+    'Globetrotter 1',
+    'Mars',
+    'Ursa',
+    'Holstein',
+    'Perdido',
+    'Globetrotter 2',
+  ];
+  public pressureData = [];
+  public p500Data = [];
+  public p500MinMax = [];
+  public p5000Data = [];
+  public pressureDates = [];
+  public plist500 = [];
+  public plist5000 = [];
+  roundedMax: number;
+
+  modStartDate: any;
+  modEndDate: any;
+  xDateMin: any;
+  xDateMax: any;
 
   @ViewChild('container') container: ElementRef;
 
-  constructor(){
-    console.log(this.radialData, 'this is the data')
-  }
+  constructor() {}
 
-  ngOnInit(){
+  ngOnInit() {
+    this.getCementService()
     const containerDiv = this.container.nativeElement;
     containerDiv.appendChild(this.createChart());
+
   }
+
+  getCementService() {
+
+      this.pressureData = realData;
+      console.log(this.pressureData)
+      this.p500Data = [];
+      this.p5000Data = [];
+      this.pressureData.map(d => this.pressureDates.push(new Date(d.TimeStamp.toString())));
+      console.log(this.pressureDates)
+      this.pressureData.map(d => {
+        if (d.Pressure < 500) {
+          this.p500Data.push(d);
+        }
+
+        let maxNum = this.pressureData.reduce((max, p) => (p.Pressure > max ? p.Pressure : max), this.pressureData[0].Pressure);
+        this.roundedMax = Number(Number.parseFloat(maxNum).toPrecision(2));
+
+        if (d.Pressure > this.roundedMax - 1000 && d.Pressure < maxNum) {
+          this.p5000Data.push(d);
+        }
+      });
+
+      let lastDate1 = new Date(this.p500Data[this.p500Data.length - 1].TimeStamp.toString());
+
+      lastDate1.setMinutes(lastDate1.getMinutes() - 5);
+
+      this.p500Data.map(d => {
+        if (new Date(d.TimeStamp.toString()) < lastDate1) {
+          d.min = d.Pressure;
+          d.max = d.Pressure;
+        }
+        if (new Date(d.TimeStamp.toString()) > lastDate1) {
+          d.min = 0;
+          d.max = 500;
+        }
+      });
+
+      let lastDate2 = new Date(this.p5000Data[this.p5000Data.length - 1].TimeStamp);
+
+      lastDate2.setMinutes(lastDate2.getMinutes() - 5);
+
+      this.p5000Data.map(d => {
+        if (new Date(d.TimeStamp.toString()) < lastDate2) {
+          d.min = d.Pressure;
+          d.max = d.Pressure;
+        }
+        if (new Date(d.TimeStamp.toString()) > lastDate2) {
+          d.min = 0;
+          d.max = 500;
+        }
+      });
+
+      this.plist500 = [];
+
+      for (let i = 1; i < this.p500Data.length; i++) {
+        let dateDifference = Math.abs(
+          new Date(this.p500Data[i].TimeStamp.toString()).getMinutes() - new Date(this.p500Data[i - 1].TimeStamp.toString()).getMinutes(),
+        );
+        if (dateDifference < 2) {
+          this.arr.push(this.p500Data[i - 1]);
+        } else {
+          this.plist500.push(this.arr);
+          this.arr = [];
+        }
+      }
+      this.plist500.push(this.arr);
+      this.arr = [];
+      console.log(this.plist500, 'plist500')
+      this.plist5000 = [];
+
+      for (let i = 1; i < this.p5000Data.length; i++) {
+        let dateDifference = Math.abs(
+          new Date(this.p5000Data[i].TimeStamp.toString()).getMinutes() - new Date(this.p5000Data[i - 1].TimeStamp.toString()).getMinutes(),
+        );
+        if (dateDifference < 2) {
+          this.arr2.push(this.p5000Data[i - 1]);
+        } else {
+          this.plist5000.push(this.arr2);
+          this.arr2 = [];
+        }
+      }
+      this.plist5000.push(this.arr2);
+      this.arr2 = [];
+
+      this.xDateMin = new Date(this.pressureDates[0]);
+      this.xDateMax = new Date(this.pressureDates[0])
+   
+      this.xDateMin.setMinutes(this.xDateMin.getMinutes() - 15);
+      this.xDateMax.setMinutes(this.xDateMax.getMinutes() + 15);
+
+      // this.xDateMin.setHours(this.xDateMin.getHours() + 5);
+      this.xDateMax.setHours(this.xDateMax.getHours() + 1);
+
+  }
+
+
+  
+
+  ngOnDestroy() {}
 
   createChart() {
     const radialDiv = document.createElement('div');
     const radialGraph = d3.select(radialDiv).classed('radial-chart-wrapper', true);
 
-    let x = d3.scaleUtc()
-    .domain([Date.UTC(2000, 0, 1), Date.UTC(2001, 0, 1) - 1])
-    .range([0, 2 * Math.PI])
+    let x = d3
+      .scaleTime()
+      .domain([this.xDateMin, this.xDateMax])
+      .range([0, 2 * Math.PI]);
+
+    // let x = d3.scaleUtc()
+    // .domain([Date.UTC(2000, 0, 1), Date.UTC(2001, 0, 1) - 1])
+    // .range([0, 2 * Math.PI])
 
     let width = 800;
     let margin = 10;
@@ -49,7 +188,7 @@ export class AppComponent {
         .call(g =>
           g
             .selectAll('g')
-            .data(x.ticks())
+            .data(x.ticks(30))
             .enter()
             .append('g')
             .each((d, i) => (d.id = d.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })))
@@ -75,8 +214,8 @@ export class AppComponent {
                 .attr(
                   'd',
                   ([a, b]) => `
-                M${d3.pointRadial(x(a), innerRadius)}
-                A${innerRadius},${innerRadius} 0,0,1 ${d3.pointRadial(x(b), innerRadius)}
+                  M${d3.pointRadial(x(a), innerRadius - 8)}
+                  A${innerRadius / 2.175},${innerRadius / 2.175} 1,1,1 ${d3.pointRadial(x(b), innerRadius / 20)}
               `,
                 ),
             )
@@ -85,7 +224,7 @@ export class AppComponent {
                 .append('text')
                 .attr('dy', 10)
                 .append('textPath')
-                .attr('startOffset', 10)
+                .attr('startOffset', 5)
                 .attr('xlink:href', d => '#' + d.id)
                 .text(d => d.id),
             )
@@ -96,7 +235,7 @@ export class AppComponent {
                 .attr('dx', -70)
                 .attr('font-size', 30)
                 .attr('fill-opacity', 0.6)
-                .text(this.radialData[this.radialData.length - 1].pressure.toFixed(2) + 'PSI'),
+                .text(this.p5000Data[this.p5000Data.length - 1].Pressure.toFixed(2) + 'PSI'),
             )
             .call(g =>
               g
@@ -170,6 +309,8 @@ export class AppComponent {
                   return [this, this.previousSibling];
                 })
                 .clone(true)
+                .attr('y', d => y(d))
+                .selectAll(function() { return [this, this.previousSibling]; })
                 .attr('fill', 'currentColor')
                 .attr('stroke', 'none'),
             ),
@@ -184,7 +325,7 @@ export class AppComponent {
         .call(g =>
           g
             .selectAll('g')
-            .data(y.ticks().reverse())
+            .data(y2.ticks().reverse())
             .enter()
             .append('g')
             .attr('fill', 'none')
@@ -193,17 +334,17 @@ export class AppComponent {
                 .append('circle')
                 .attr('stroke', '#7EE2FF')
                 .attr('stroke-opacity', 0.6)
-                .attr('r', y),
+                .attr('r', y2),
             )
             .call(g =>
               g
                 .append('text')
-                .attr('y', d => y(d))
+                .attr('y', d => y2(d))
                 .attr('dy', '0.35em')
                 .attr('color', 'white')
                 .text((x, i) => `${x.toFixed(0)}${i ? '' : 'High Pressure'}`)
                 .clone(true)
-                .attr('y', d => y(d))
+                .attr('y', d => y2(d))
                 .selectAll(function() {
                   return [this, this.previousSibling];
                 })
@@ -213,24 +354,25 @@ export class AppComponent {
             ),
         );
 
-    // let y = d3
-    //   .scaleLinear()
-    //   .domain([d3.min(this.radialData, d => 0), d3.max(this.radialData, d => 500)])
-    //   .range([innerRadius, outerRadius]);
+    let y = d3
+      .scaleLinear()
+      .domain([d3.min(this.p500Data, d => 0), d3.max(this.p500Data, d => 500)])
+      .range([innerRadius, outerRadius]);
 
-     let y = d3.scaleLinear()
-      .domain([d3.min(data, d => d.pMin), d3.max(data, d => d.pMax)])
-      .range([innerRadius, outerRadius])
+    let y2 = d3
+      .scaleLinear()
+      .domain([d3.min(this.p5000Data, d => this.roundedMax - 1000), d3.max(this.pressureData, d => this.roundedMax)])
+      .range([innerRadius, outerRadius]);
 
     let line = d3
       .lineRadial<ChartData>()
       .curve(d3.curveLinear)
-      .angle(d => x(new Date(d.date).setHours(new Date(d.date).getHours() + 5)));
+      .angle((d: any) => x(new Date(d.TimeStamp.toString()).setHours(new Date(d.TimeStamp.toString()).getHours() + 5)));
 
     let area = d3
       .areaRadial<ChartData>()
       .curve(d3.curveLinear)
-      .angle(d => x(new Date(d.date).setHours(new Date(d.date).getHours() + 5)));
+      .angle((d: any) => x(new Date(d.TimeStamp.toString()).setHours(new Date(d.TimeStamp.toString()).getHours() + 5)));
 
     const svg = radialGraph
       .append('svg')
@@ -238,15 +380,20 @@ export class AppComponent {
       .attr('stroke-linejoin', 'round')
       .attr('stroke-linecap', 'round');
 
-    // for (let i = 0; i < this.plist500.length; i++) {
-    //   svg
-    //     .append('path')
-    //     .attr('fill', 'none')
-    //     .attr('stroke', 'lightsteelblue')
-    //     .attr('stroke-opacity', 0.88)
-    //     .attr('stroke-width', 3)
-    //     .attr('d', line.radius(d => y(d.Value))(this.plist500[i]));
-    // }
+    svg
+      .append('path')
+      .classed('chart-tooltip', true)
+      .style('display', 'none');
+
+    for (let i = 0; i < this.plist500.length; i++) {
+      svg
+        .append('path')
+        .attr('fill', 'none')
+        .attr('stroke', 'lightsteelblue')
+        .attr('stroke-opacity', 0.88)
+        .attr('stroke-width', 3)
+        .attr('d', line.radius(d => y(d.Pressure))(this.plist500[i]));
+    }
 
     // for (let i = 0; i < this.plist5000.length; i++) {
     //   svg
@@ -255,41 +402,24 @@ export class AppComponent {
     //     .attr('stroke', 'white')
     //     .attr('stroke-opacity', 0.88)
     //     .attr('stroke-width', 3)
-    //     .attr('d', line.radius(d => y2(d.Value))(this.plist5000[i]));
+    //     .attr('d', line.radius(d => y2(d.Pressure))(this.plist5000[i]));
     // }
 
     // svg
     //   .append('path')
     //   .attr('fill', '#15CE07')
     //   .attr('fill-opacity', 0.2)
-    //   .attr('d', area.innerRadius(d => y(d.min)).outerRadius(d => y(d.max))(this.p500Data));
+    //   .attr('d', area.innerRadius((d:any) => y(d.min)).outerRadius((d:any) => y(d.max))(this.p500Data));
 
     // svg
     //   .append('path')
     //   .attr('fill', '#15CE07')
     //   .attr('fill-opacity', 0.2)
-    //   .attr('d', area.innerRadius(d => y(d.min)).outerRadius(d => y(d.max))(this.p5000Data));
-
-    svg.append("path")
-    .attr("fill", "none")
-    .attr("stroke", "steelblue")
-    .attr("stroke-width", 1.5)
-    .attr("d", line
-        .radius(d => y(d.pressure))
-      (this.radialData));
-
-      svg.append("path")
-      .attr("fill", "lightsteelblue")
-      .attr("fill-opacity", 0.2)
-      .attr("d", area
-          .innerRadius(d => y(d.pMin))
-          .outerRadius(d => y(d.pMax))
-        (this.radialData));
-
+    //   .attr('d', area.innerRadius((d:any) => y(d.min)).outerRadius((d:any) => y(d.max))(this.p5000Data));
 
     svg.append('g').call(yAxis);
 
-    svg.append('g').call(y2Axis);
+    // svg.append('g').call(y2Axis);
 
     svg.append('g').call(xAxis);
 
