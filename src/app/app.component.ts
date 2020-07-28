@@ -61,19 +61,18 @@ export class AppComponent {
 
   ngOnInit() {
     this.getCementService()
+    // const containerDiv = this.container.nativeElement;
+    // containerDiv.appendChild(this.createChart());
   
 
-    this.sub = Observable.interval(1000)
+    this.sub = Observable.interval(5)
     .subscribe((val) => {
     
         this.LPData.push(this.plist500[0][this.index])
        
         if(typeof this.plist500[0][this.index].TimeStamp != "undefined"){
-          this.index += 10
-        } else {
-          this.index -= 10
           this.index += 1
-        }
+        } 
         console.log(this.plist500[0][this.index])
       
       console.log('function is counting', this.LPData)
@@ -130,20 +129,7 @@ export class AppComponent {
         }
       });
 
-      let lastDate2 = new Date(this.p5000Data[this.p5000Data.length - 1].TimeStamp);
-
-      lastDate2.setMinutes(lastDate2.getMinutes() - 5);
-
-      this.p5000Data.map(d => {
-        if (new Date(d.TimeStamp.toString()) < lastDate2) {
-          d.min = d.Pressure;
-          d.max = d.Pressure;
-        }
-        if (new Date(d.TimeStamp.toString()) > lastDate2) {
-          d.min = 0;
-          d.max = 500;
-        }
-      });
+     
 
       this.plist500 = [];
 
@@ -163,17 +149,33 @@ export class AppComponent {
       console.log(this.plist500, 'plist500')
       this.plist5000 = [];
 
-      for (let i = 1; i < this.p5000Data.length; i++) {
-        let dateDifference = Math.abs(
-          new Date(this.p5000Data[i].TimeStamp.toString()).getMinutes() - new Date(this.p5000Data[i - 1].TimeStamp.toString()).getMinutes(),
-        );
-        if (dateDifference < 2) {
-          this.arr2.push(this.p5000Data[i - 1]);
-        } else {
-          this.plist5000.push(this.arr2);
-          this.arr2 = [];
+      let lastDate2 = new Date(this.plist500[0][this.plist500[0].length - 1].TimeStamp);
+
+      lastDate2.setMinutes(lastDate2.getMinutes() - 5);
+
+      this.plist500[0].map(d => {
+        if (new Date(d.TimeStamp.toString()) < lastDate2) {
+          d.min = d.Pressure;
+          d.max = d.Pressure;
         }
-      }
+        if (new Date(d.TimeStamp.toString()) > lastDate2) {
+          d.min = 0;
+          d.max = 500;
+        }
+      });
+
+
+      // for (let i = 1; i < this.p5000Data.length; i++) {
+      //   let dateDifference = Math.abs(
+      //     new Date(this.p5000Data[i].TimeStamp.toString()).getMinutes() - new Date(this.p5000Data[i - 1].TimeStamp.toString()).getMinutes(),
+      //   );
+      //   if (dateDifference < 2) {
+      //     this.arr2.push(this.p5000Data[i - 1]);
+      //   } else {
+      //     this.plist5000.push(this.arr2);
+      //     this.arr2 = [];
+      //   }
+      // }
       this.plist5000.push(this.arr2);
       this.arr2 = [];
 
@@ -258,54 +260,66 @@ export class AppComponent {
                 .attr('startOffset', 5)
                 .attr('xlink:href', d => '#' + d.id)
                 .text(d => d.id),
-            )
-            .call(g =>
-              g
-                .append('text')
-                .attr('dy', 8)
-                .attr('dx', -70)
-                .attr('font-size', 30)
-                .attr('fill-opacity', 0.6)
-                .text(this.p5000Data[this.p5000Data.length - 1].Pressure.toFixed(2) + 'PSI'),
-            )
-            // .call(g =>
-            //   g
-            //     .append('text')
-            //     .attr('dy', -25)
-            //     .attr('dx', -45)
-            //     .attr('font-size', 20)
-            //     .attr('fill-opacity', 0.6)
-            //     .text('Pod:'),
-            // )
-            // .call(g =>
-            //   g
-            //     .append('text')
-            //     .attr('dy', 33)
-            //     .attr('dx', 0)
-            //     .attr('font-size', 240)
-            //     .attr('fill-opacity', 0.6)
-            //     .attr('fill', 'blue')
-            //     .text('-'),
-            // )
-            // .call(g =>
-            //   g
-            //     .append('text')
-            //     .attr('dy', 13)
-            //     .attr('dx', -45)
-            //     .attr('font-size', 20)
-            //     .attr('fill-opacity', 0.6)
-            //     .text('LP: Pass'),
-            // )
-            // .call(g =>
-            //   g
-            //     .append('text')
-            //     .attr('dy', 50)
-            //     .attr('dx', -45)
-            //     .attr('font-size', 20)
-            //     .attr('opacity', 0.6)
-            //     .text('HP: Fail'),
-            // ),
+            )  
         );
+
+        let xAxis2 = g =>
+        g
+          .attr('font-family', 'sans-serif')
+          .attr('font-size', 11)
+          .attr('fill', 'white')
+          .call(g =>
+            g
+              .selectAll('g')
+              .data(x.ticks(15))
+              .enter()
+              .append('g')
+              .each((d, i) => (d.id = d.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })))
+              .call(g =>
+                g
+                  .append('path')
+                  .attr('stroke', '#7EE2FF')
+                  .attr('stroke-opacity', 0.6)
+                  .attr(
+                    'd',
+                    d => `
+                  M${d3.pointRadial(x(d), innerRadius)}
+                  L${d3.pointRadial(x(d), outerRadius)}
+                `,
+                  ),
+              )
+              .call(g =>
+                g
+                  .append('path')
+                  .attr('id', d => d.id)
+                  .datum(d => [d, d3.timeDay.offset(d, 1)])
+                  .attr('fill', 'none')
+                  .attr(
+                    'd',
+                    ([a, b]) => `
+                    M${d3.pointRadial(x(a), innerRadius - 8)}
+                    A${innerRadius / 2.175},${innerRadius / 2.175} 1,1,1 ${d3.pointRadial(x(b), innerRadius / 20)}
+                `,
+                  ),
+              )
+              .call(g =>
+                g
+                  .append('text')
+                  .attr('dy', 10)
+                  .append('textPath')
+                  .attr('startOffset', 5)
+                  .attr('xlink:href', d => '#' + d.id)
+                  .text(d => d.id),
+              )  .call(g =>
+                g
+                  .append('text')
+                  .attr('dy', 8)
+                  .attr('dx', -150)
+                  .attr('font-size', 70)
+                  .attr('fill-opacity', 0.6)
+                  .text(this.plist500[0][this.plist500[0].length - 1].Pressure.toFixed(2) + 'PSI'),
+              )
+          )
 
     let yAxis = g =>
       g
@@ -433,12 +447,9 @@ export class AppComponent {
     //     .attr('d', line.radius(d => y2(d.Pressure))(this.plist5000[i]));
     // }
 
-    // svg
-    //   .append('path')
-    //   .attr('fill', '#15CE07')
-    //   .attr('fill-opacity', 0.2)
-    //   .attr('d', area.innerRadius((d:any) => y(d.min)).outerRadius((d:any) => y(d.max))(this.p500Data));
-
+   
+  
+console.log(this.plist500[0])
       // console.log(this.p500Data,'500 data')
     // svg
     //   .append('path')
@@ -446,11 +457,22 @@ export class AppComponent {
     //   .attr('fill-opacity', 0.2)
     //   .attr('d', area.innerRadius((d:any) => y(d.min)).outerRadius((d:any) => y(d.max))(this.p5000Data));
 
-    svg.append('g').call(yAxis);
+    svg.append('g').call(yAxis).style('font-size', 30);
 
     // svg.append('g').call(y2Axis);
 
     svg.append('g').call(xAxis);
+
+    if(this.plist500[0].length == this.LPData.length + 1){
+      svg
+      .append('path')
+      .attr('fill', '#15CE07')
+      .attr('fill-opacity', 0.2)
+      .attr('d', area.innerRadius((d:any) => y(d.min)).outerRadius((d:any) => y(d.max))(this.plist500[0]));
+
+
+      svg.append('g').call(xAxis2);
+    }
 
     return radialDiv;
   }
