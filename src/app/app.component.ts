@@ -206,7 +206,7 @@ export class AppComponent {
     // .domain([Date.UTC(2000, 0, 1), Date.UTC(2001, 0, 1) - 1])
     // .range([0, 2 * Math.PI])
 
-    let width = 800;
+    let width = 1270;
     let margin = 10;
     let innerRadius = width / 5;
     let outerRadius = width / 2 - margin;
@@ -214,7 +214,7 @@ export class AppComponent {
     let xAxis = g =>
       g
         .attr('font-family', 'sans-serif')
-        .attr('font-size', 7)
+        .attr('font-size', 11)
         .attr('fill', 'white')
         .call(g =>
           g
@@ -311,7 +311,7 @@ export class AppComponent {
       g
         .attr('text-anchor', 'middle')
         .attr('font-family', 'sans-serif')
-        .attr('font-size', 16)
+        .attr('font-size', 20)
         .attr('color', 'black')
         .call(g =>
           g
@@ -407,7 +407,7 @@ export class AppComponent {
 
     const svg = radialGraph
       .append('svg')
-      .attr('viewBox', '-1051 -420 2100 2500')
+      .attr('viewBox', '-1014 -690 2100 2500')
       .attr('stroke-linejoin', 'round')
       .attr('stroke-linecap', 'round');
 
