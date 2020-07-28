@@ -2,6 +2,7 @@ import { Component, OnInit, Output, Input, AfterViewInit, ViewChild, ElementRef,
 import * as d3 from 'd3';
 import { data } from './radialData'
 import * as realData from './PT_Data_Dec_12_Pontus_New_Format.json'
+import { Observable } from 'rxjs';
 
 interface ChartData {
   TimeStamp: String;
@@ -46,7 +47,9 @@ export class AppComponent {
   public plist500 = [];
   public plist5000 = [];
   roundedMax: number;
-
+  sub:any
+  index = 1
+  LPData = []
   modStartDate: any;
   modEndDate: any;
   xDateMin: any;
@@ -58,8 +61,36 @@ export class AppComponent {
 
   ngOnInit() {
     this.getCementService()
-    const containerDiv = this.container.nativeElement;
-    containerDiv.appendChild(this.createChart());
+  
+
+    this.sub = Observable.interval(1000)
+    .subscribe((val) => {
+    
+        this.LPData.push(this.plist500[0][this.index])
+       
+        if(typeof this.plist500[0][this.index].TimeStamp != "undefined"){
+          this.index += 10
+        } else {
+          this.index -= 10
+          this.index += 1
+        }
+        console.log(this.plist500[0][this.index])
+      
+      console.log('function is counting', this.LPData)
+   
+      const containerDiv = this.container.nativeElement;
+      if (containerDiv.childNodes[0]) {
+        console.log('child removed 1')
+      containerDiv.removeChild(containerDiv.childNodes[0]);
+      }
+      if (containerDiv.childNodes[1]) {
+        console.log('child removed 2')
+        containerDiv.removeChild(containerDiv.childNodes[1]);
+        }
+      console.log(containerDiv)
+      containerDiv.appendChild(this.createChart());
+      
+      });
 
   }
 
@@ -231,49 +262,49 @@ export class AppComponent {
             .call(g =>
               g
                 .append('text')
-                .attr('dy', -60)
+                .attr('dy', 8)
                 .attr('dx', -70)
                 .attr('font-size', 30)
                 .attr('fill-opacity', 0.6)
                 .text(this.p5000Data[this.p5000Data.length - 1].Pressure.toFixed(2) + 'PSI'),
             )
-            .call(g =>
-              g
-                .append('text')
-                .attr('dy', -25)
-                .attr('dx', -45)
-                .attr('font-size', 20)
-                .attr('fill-opacity', 0.6)
-                .text('Pod:'),
-            )
-            .call(g =>
-              g
-                .append('text')
-                .attr('dy', 33)
-                .attr('dx', 0)
-                .attr('font-size', 240)
-                .attr('fill-opacity', 0.6)
-                .attr('fill', 'blue')
-                .text('-'),
-            )
-            .call(g =>
-              g
-                .append('text')
-                .attr('dy', 13)
-                .attr('dx', -45)
-                .attr('font-size', 20)
-                .attr('fill-opacity', 0.6)
-                .text('LP: Pass'),
-            )
-            .call(g =>
-              g
-                .append('text')
-                .attr('dy', 50)
-                .attr('dx', -45)
-                .attr('font-size', 20)
-                .attr('opacity', 0.6)
-                .text('HP: Fail'),
-            ),
+            // .call(g =>
+            //   g
+            //     .append('text')
+            //     .attr('dy', -25)
+            //     .attr('dx', -45)
+            //     .attr('font-size', 20)
+            //     .attr('fill-opacity', 0.6)
+            //     .text('Pod:'),
+            // )
+            // .call(g =>
+            //   g
+            //     .append('text')
+            //     .attr('dy', 33)
+            //     .attr('dx', 0)
+            //     .attr('font-size', 240)
+            //     .attr('fill-opacity', 0.6)
+            //     .attr('fill', 'blue')
+            //     .text('-'),
+            // )
+            // .call(g =>
+            //   g
+            //     .append('text')
+            //     .attr('dy', 13)
+            //     .attr('dx', -45)
+            //     .attr('font-size', 20)
+            //     .attr('fill-opacity', 0.6)
+            //     .text('LP: Pass'),
+            // )
+            // .call(g =>
+            //   g
+            //     .append('text')
+            //     .attr('dy', 50)
+            //     .attr('dx', -45)
+            //     .attr('font-size', 20)
+            //     .attr('opacity', 0.6)
+            //     .text('HP: Fail'),
+            // ),
         );
 
     let yAxis = g =>
@@ -380,21 +411,18 @@ export class AppComponent {
       .attr('stroke-linejoin', 'round')
       .attr('stroke-linecap', 'round');
 
-    svg
-      .append('path')
-      .classed('chart-tooltip', true)
-      .style('display', 'none');
+   
 
-    for (let i = 0; i < this.plist500.length; i++) {
+    // for (let i = 0; i < this.plist500.length; i++) {
       svg
         .append('path')
         .attr('fill', 'none')
         .attr('stroke', 'lightsteelblue')
         .attr('stroke-opacity', 0.88)
         .attr('stroke-width', 3)
-        .attr('d', line.radius(d => y(d.Pressure))(this.plist500[0]));
-    }
-
+        .attr('d', line.radius(d => y(d.Pressure))(this.LPData));
+    // }
+    
     // for (let i = 0; i < this.plist5000.length; i++) {
     //   svg
     //     .append('path')
@@ -411,6 +439,7 @@ export class AppComponent {
     //   .attr('fill-opacity', 0.2)
     //   .attr('d', area.innerRadius((d:any) => y(d.min)).outerRadius((d:any) => y(d.max))(this.p500Data));
 
+      // console.log(this.p500Data,'500 data')
     // svg
     //   .append('path')
     //   .attr('fill', '#15CE07')
