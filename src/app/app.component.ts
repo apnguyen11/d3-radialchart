@@ -149,16 +149,17 @@ export class AppComponent {
       console.log(this.plist500, 'plist500')
       this.plist5000 = [];
 
-      let lastDate2 = new Date(this.plist500[0][this.plist500[0].length - 1].TimeStamp);
-
-      lastDate2.setMinutes(lastDate2.getMinutes() - 5);
+      let startLastDate = new Date("2019-12-12T19:27:00");
+      let endLastDate = new Date("2019-12-12T19:32:00");
+      // console.log(lastDate2, 'last date')
+   
 
       this.plist500[0].map(d => {
-        if (new Date(d.TimeStamp.toString()) < lastDate2) {
+        if (new Date(d.TimeStamp.toString()) < startLastDate || new Date(d.TimeStamp.toString()) > endLastDate) {
           d.min = d.Pressure;
           d.max = d.Pressure;
         }
-        if (new Date(d.TimeStamp.toString()) > lastDate2) {
+        if (new Date(d.TimeStamp.toString()) > startLastDate && new Date(d.TimeStamp.toString()) < endLastDate) {
           d.min = 0;
           d.max = 500;
         }
@@ -317,7 +318,7 @@ export class AppComponent {
                   .attr('dx', -150)
                   .attr('font-size', 70)
                   .attr('fill-opacity', 0.6)
-                  .text(this.plist500[0][this.plist500[0].length - 1].Pressure.toFixed(2) + 'PSI'),
+                  .text(this.plist500[0][this.LPData.length - 1].Pressure.toFixed(2) + 'PSI'),
               )
           )
 
@@ -469,10 +470,9 @@ console.log(this.plist500[0])
       .attr('fill', '#15CE07')
       .attr('fill-opacity', 0.2)
       .attr('d', area.innerRadius((d:any) => y(d.min)).outerRadius((d:any) => y(d.max))(this.plist500[0]));
-
-
-      svg.append('g').call(xAxis2);
     }
+
+    svg.append('g').call(xAxis2);
 
     return radialDiv;
   }
