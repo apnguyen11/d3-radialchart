@@ -151,8 +151,6 @@ export class AppComponent {
 
       let startLastDate = new Date("2019-12-12T19:27:00");
       let endLastDate = new Date("2019-12-12T19:32:00");
-      // console.log(lastDate2, 'last date')
-   
 
       this.plist500[0].map(d => {
         if (new Date(d.TimeStamp.toString()) < startLastDate || new Date(d.TimeStamp.toString()) > endLastDate) {
@@ -437,34 +435,16 @@ export class AppComponent {
         .attr('stroke-width', 3)
         .attr('d', line.radius(d => y(d.Pressure))(this.LPData));
     // }
-    
-    // for (let i = 0; i < this.plist5000.length; i++) {
-    //   svg
-    //     .append('path')
-    //     .attr('fill', 'none')
-    //     .attr('stroke', 'white')
-    //     .attr('stroke-opacity', 0.88)
-    //     .attr('stroke-width', 3)
-    //     .attr('d', line.radius(d => y2(d.Pressure))(this.plist5000[i]));
-    // }
-
    
-  
 console.log(this.plist500[0])
-      // console.log(this.p500Data,'500 data')
-    // svg
-    //   .append('path')
-    //   .attr('fill', '#15CE07')
-    //   .attr('fill-opacity', 0.2)
-    //   .attr('d', area.innerRadius((d:any) => y(d.min)).outerRadius((d:any) => y(d.max))(this.p5000Data));
+
 
     svg.append('g').call(yAxis).style('font-size', 30);
-
-    // svg.append('g').call(y2Axis);
-
     svg.append('g').call(xAxis);
+    let endLastDate = new Date("2019-12-12T19:32:00");
+    let lastLPDate = new Date(this.LPData[this.LPData.length - 1].TimeStamp)
 
-    if(this.plist500[0].length == this.LPData.length + 1){
+    if(lastLPDate > endLastDate){
       svg
       .append('path')
       .attr('fill', '#15CE07')
